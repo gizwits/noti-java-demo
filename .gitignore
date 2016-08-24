@@ -1,0 +1,6 @@
+deps
+build
+dist
+target
+*.swp
+logs
