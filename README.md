@@ -17,11 +17,11 @@ Gizwits noti client demo.
     * `mvn clean package`
 * 运行demo，打印接受到的设备消息
     * `java -jar target/gizwits-noti-demo-0.1.0-jar-with-dependencies.jar`
-* 与eid关联的pk下的设备，上下线，即可查看设备消息
+* 与eid关联的pk下的设备，上下线，即可查看设备消息。在当前logs文件下可查看日志
 
 ## ant编译 & 运行
 * 打包代码和库，在dist文件下生成`gizwitsi-noti-demo-0.1.0.jar`
     * `ant dist`
 * 运行demo，打印接受到的设备消息
     * `java -jar dist/gizwitsi-noti-demo-0.1.0.jar`
-* 与eid关联的pk下的设备，上下线，即可查看设备消息    
+* 与eid关联的pk下的设备，上下线，即可查看设备消息。在当前logs文件下可查看日志

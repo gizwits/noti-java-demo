@@ -35,12 +35,11 @@ public class GizwitsNoti
     private static final int GIZWITS_NOTI_PORT = 2015;                  // 机智云noti ssl服务端口
     private String enterpriseId = "";                                   // 登录noti的企业id
     private String enterpriseSecret = "";                               // 登录noti的企业密钥
-    private long ping;                                                  // noti心跳ping发送时间
-    private long pong;                                                  // 收到noti心跳pong时间
     private ReceiveThread receiveThread;                                // 接受socket报文的线程
     private SendThread sendThread;                                      // 向socket发送login，ping的线程
     private Socket socket;                                              // sslsocket对象
     private boolean isConnect;                                          // socket连接状态
+    private boolean isLogin;                                            // eid登录状态
     private int reconnCount;                                            // 重连次数
     private CallBack callBack;                                          // 接受处理设备通知的回调
     private final int MAXCONNECT = 2;                                   // 最大重连数
@@ -53,7 +52,7 @@ public class GizwitsNoti
         this.callBack = callBack;
     }
     
-    public interface CallBack           // 接受设备消息的回调方法
+    public interface CallBack                                   // 接受设备消息的回调方法
     {          
     	public abstract void call(JSONObject msg);
     }
@@ -61,65 +60,62 @@ public class GizwitsNoti
     private Socket createSslSocket() throws IOException, NoSuchAlgorithmException, KeyManagementException
     {
     	SSLContext context = SSLContext.getInstance("SSL");
-        // 初始化，不发送客户端证书，也不验证服务端证书
-        context.init(null,
+        context.init(null,                                      // 初始化，不发送客户端证书，也不验证服务端证书
                     new TrustManager[]{new MyX509TrustManager()},
                     new SecureRandom());
         SSLSocketFactory fcty = context.getSocketFactory();
         SSLSocket socket = (SSLSocket) fcty.createSocket(GIZWITS_NOTI_HOST, GIZWITS_NOTI_PORT);
-        socket.setKeepAlive(true);      // 开启socket的保活
-        socket.setSoTimeout(TIMEOUT);   // 设置socket的接受消息超时时间                                
+        socket.setKeepAlive(true);                              // 开启socket的保活
+        socket.setSoTimeout(TIMEOUT);                           // 设置socket的接受消息超时时间
         isConnect = true;
         return socket;
     }
     
     private class MyX509TrustManager implements X509TrustManager 
     {
-        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException 
+        {
         }
 
-        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException 
+        {
         }
 
-        public X509Certificate[] getAcceptedIssuers() {
+        public X509Certificate[] getAcceptedIssuers() 
+        {
         	return null;
         }
     }
     
     private class SendThread extends Thread
     {
-        private boolean isLogin = false;    // 登录状态
+        private boolean hasSendLogin = false;                   // 是否发送登录指令
             
         @Override
         public void run() 
         {
             while (isConnect) {
                 try {
-                    String sendMsg;
                     if (!isLogin) {
-                        sendMsg = getLoginMsg();    
-                        logger.debug("登录发送:" + sendMsg);
-                        isLogin = true;
+                        if (!hasSendLogin) {
+                            sendLoginMsg();
+                            hasSendLogin = true;
+                        } else {
+                            Thread.sleep(1000);                 // 等待登录结果
+                        }
                     } else {
-                        // 1秒钟检查一次连接状态，1分钟发送一次ping指令
-                        for (int i = 0; i < 60; i++) {
+                        for (int i = 0; i < 60; i++) {          // 1秒钟检查一次连接状态，1分钟发送一次ping指令
                             Thread.sleep(1000);
                             if (!isConnect) {
                             	logger.debug("noti接口SendThread退出...." + Thread.currentThread().getName());
                                 return;
                             }
                         }
-                        sendMsg = getPingMsg();
-                        logger.debug("发送心跳:" + sendMsg);
-                        ping = System.currentTimeMillis();
+                        sendPingMsg();
                     }
-                    PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
-                    pw.write(sendMsg);                  // 往socket写入消息
-                    pw.flush();                         // 让socket发送已写入的消息
-                    socket.setSoTimeout(TIMEOUT);       // 设置socket的接受消息超时时间 
                 } catch (SocketException e) {
                     e.printStackTrace();
-                    reconnect();                        // 连接被断开重连
+                    reconnect();                                // 连接被断开重连
                     return;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -128,7 +124,7 @@ public class GizwitsNoti
             logger.debug("noti接口SendThread退出...." + Thread.currentThread().getName());
         }
         
-        public String getLoginMsg()     // 获取登录指令
+        public void sendLoginMsg() throws IOException           
         {
             Map<String, Object> data = new HashMap<String, Object>();
             data.put("enterprise_id", enterpriseId);
@@ -138,12 +134,24 @@ public class GizwitsNoti
                             .put("cmd", "enterprise_login_req")
                             .put("data", data)
                             .toString();
-            return msg + "\n";
+            String sendMsg =  msg + "\n";
+            sendMsg(sendMsg);                                   
+            logger.debug("登录发送:" + sendMsg);
         }
         
-        public String getPingMsg()      // 获取ping指令
+        public void sendPingMsg() throws IOException, InterruptedException            
         {
-            return "{\"cmd\": \"enterprise_ping\"}\n";
+            String sendMsg = "{\"cmd\": \"enterprise_ping\"}\n";
+            sendMsg(sendMsg);
+            logger.debug("发送心跳:" + sendMsg);
+        }
+        
+        public void sendMsg(String sendMsg) throws IOException 
+        {
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+            pw.write(sendMsg);                                  // 往socket写入消息
+            pw.flush();                                         // 让socket发送已写入的消息
+            socket.setSoTimeout(TIMEOUT);                       // 设置socket的接受消息超时时间 
         }
     }
     
@@ -164,15 +172,15 @@ public class GizwitsNoti
                             switch (cmd) 
                             {
                             	case "enterprise_login_res":    // 登录请求的返回
-                            		checkLogin(json);
-                            		break;
+                                    checkLogin(json);
+                                    break;
                             	case "enterprise_pong":         // ping指令的返回
                                     setPong();
-                            		break;
+                                    break;
                             	case "enterprise_event_push":   // 设备消息
                                     replyAck(json);
                                     callBack.call(json);
-                            		break;
+                                    break;
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -195,13 +203,14 @@ public class GizwitsNoti
             try {
                 JSONObject data = json.getJSONObject("data");
                 boolean result = data.getBoolean("result");
-                if(result){
-                    socket.setSoTimeout(0);     // 设置接受消息超时时间为永久
-                    reconnCount = 0;            // 重置重连次数
+                if(result) {
+                    isLogin = true;                             // 登录成功
+                    socket.setSoTimeout(0);                     // 设置接受消息超时时间为永久
+                    reconnCount = 0;                            // 重置重连次数
                     logger.info("login success.");
                 } else {
                     logger.info("login fail, msg: {}", data.getString("msg"));
-                    disconnect();               // 断开连接
+                    disconnect();                               // 断开连接
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -210,11 +219,10 @@ public class GizwitsNoti
 
         private void setPong() throws SocketException
         {
-            pong = System.currentTimeMillis();
-            socket.setSoTimeout(0);             // 设置接受消息超时时间为永久
+            socket.setSoTimeout(0);                             // 设置接受消息超时时间为永久
         }
 
-        private void replyAck(JSONObject json)  // 回复noti服务端ack
+        private void replyAck(JSONObject json)                  // 回复noti服务端ack
         {
             try {
                 String sendMsg = "{\"cmd\": \"enterprise_event_ack\",\"delivery_id\": " + json.getLong("delivery_id") + "}\n";
@@ -237,11 +245,11 @@ public class GizwitsNoti
                 Thread.sleep(5000);
                 logger.debug("开始执行重连...");
                 disconnect();
-                sendThread.join(3000);          // 等待发送线程结束
-                receiveThread.join(3000);       // 等待接受线程结束
+                sendThread.join(3000);                          // 等待发送线程结束
+                receiveThread.join(3000);                       // 等待接受线程结束
                 if (reconnCount < MAXCONNECT) {
                     reconnCount++ ;
-                    connect();                  // 重新开始连接
+                    connect();                                  // 重新开始连接
                 } 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -249,13 +257,12 @@ public class GizwitsNoti
         }
     }
     
-    public void connect()                       // 开启连接
+    public void connect()                                       // 开启连接
     {
         try {
             logger.debug("开始连接noti...");
-            ping = 0;
-            pong = 0;
             isConnect = false;
+            isLogin = false;
             socket = createSslSocket();
             sendThread = new SendThread();
             sendThread.start();
@@ -266,7 +273,7 @@ public class GizwitsNoti
         }
     }
     
-    private void disconnect()                   // 断开socket连接
+    private void disconnect()                                   // 断开socket连接
     {
         try {
             logger.debug("终止连接noti....");
@@ -277,7 +284,7 @@ public class GizwitsNoti
         }
     }
     
-    private void reconnect()                    // 重连socket
+    private void reconnect()                                    // 重连socket
     {
         logger.debug("准备执行重连...");
         new ReconnectThread().start();
@@ -289,7 +296,6 @@ public class GizwitsNoti
         
         new GizwitsNoti("8fb23e6dbf06438b8200cf4588e45b5f", "c7c9e01549004b96a8612a0e7c71a9d6", 
                         new CallBack() {
-                            @Override
                             public void call(JSONObject msg)    
                             {
                                 System.out.println( msg.toString() );

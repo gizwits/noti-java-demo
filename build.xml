@@ -29,7 +29,15 @@
     <delete dir="${build.home}"/>
     <delete dir="${dist.home}"/>
   </target>
+  
+  <target name="prepare">
+    <!-- Create build directories as needed -->
+    <mkdir  dir="${build.home}"/>
+    <mkdir  dir="${class.home}"/>
 
+    <!-- Copy external dependencies as required -->
+    <mkdir  dir="${build.home}/lib"/>
+  </target>
 
   <target name="compile" depends="prepare"
    description="Compile Java sources">
@@ -48,14 +56,13 @@ includeAntRuntime="false">
     
     <!-- Copy config file -->
     <copy file="${src.home}/main/resources/log4j2.xml" 
-        tofile="${class.home}/log4j2.xml" overwrite="true" force="true" />        
-
-    <!-- Copy jar -->
+        tofile="${class.home}/log4j2.xml" overwrite="true" force="true" />   
+           
+    <!-- Copy additional files to ${dist.home} as necessary -->
     <copy  todir="${build.home}/lib">
       <fileset dir="${lib.home}" />
-    </copy>
+    </copy>         
   </target>
-
           
   <target name="dist" depends="compile" description="Create jar and MANIFEST.MF">
       <pathconvert property="libs" pathsep=" ">
@@ -81,16 +88,6 @@ includeAntRuntime="false">
     <copy  todir="${dist.home}/lib">
       <fileset dir="${lib.home}" />
     </copy>
-  </target>
-
-  <target name="prepare">
-    <!-- Create build directories as needed -->
-    <mkdir  dir="${build.home}"/>
-    <mkdir  dir="${class.home}"/>
-
-    <!-- Copy external dependencies as required -->
-    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
-    <mkdir  dir="${build.home}/lib"/>
   </target>
 
 </project>
