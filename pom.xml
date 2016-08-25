@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.gizwits.platform.notidemo</groupId>
-  <artifactId>gizwits_noti_demo</artifactId>
+  <artifactId>gizwits-noti-demo</artifactId>
   <version>0.1.0</version>
   <packaging>jar</packaging>
 
-  <name>gizwits_noti_demo</name>
+  <name>gizwits-noti-demo</name>
   <url>http://maven.apache.org</url>
 
   <properties>
