@@ -36,7 +36,7 @@
 
     <!-- Compile Java classes as necessary -->        
     <javac srcdir="${src.home}"
-          destdir="${build.home}/classes"
+          destdir="${class.home}"
             debug="${compile.debug}"
       deprecation="${compile.deprecation}"
          encoding="UTF-8"
@@ -48,60 +48,49 @@ includeAntRuntime="false">
     
     <!-- Copy config file -->
     <copy file="${src.home}/main/resources/log4j2.xml" 
-        tofile="${build.home}/classes/log4j2.xml" overwrite="true" force="true" />        
+        tofile="${class.home}/log4j2.xml" overwrite="true" force="true" />        
 
-    <!-- Copy application resources -->
-    <copy  todir="${build.home}/classes">
-      <fileset dir="${src.home}" excludes="**/*.java"/>
+    <!-- Copy jar -->
+    <copy  todir="${build.home}/lib">
+      <fileset dir="${lib.home}" />
     </copy>
-    
   </target>
 
-
-  <pathconvert property="libs" pathsep=" ">
-      <mapper>
-          <chainedmapper>
-              <flattenmapper />
-              <globmapper from="*" to="lib/*" />
-          </chainedmapper>
-      </mapper>
-      <fileset dir="${lib.home}">
-          <include name="*.jar" />
-      </fileset>
-  </pathconvert>
           
-  <target name="dist" depends="compile" description="Create binary distribution">
+  <target name="dist" depends="compile" description="Create jar and MANIFEST.MF">
+      <pathconvert property="libs" pathsep=" ">
+          <path refid="compile.classpath" />  
+          <mapper>
+              <chainedmapper>
+                  <flattenmapper />
+                  <globmapper from="*" to="lib/*" />
+              </chainedmapper>
+          </mapper>
+      </pathconvert>
+      
     <!-- Create application JAR file -->
     <jar jarfile="${dist.home}/${app.name}-${app.version}.jar"
-         basedir="${build.home}" excludes="test">
-         <fileset dir="${bin}" >  
-             <include name="**/*.class" />   
-         </fileset> 
+         basedir="${class.home}" excludes="test">
          <manifest>
              <attribute name="Main-Class" value="com.gizwits.platform.notidemo.GizwitsNoti"/>
              <attribute name="Class-Path" value="${libs}"/>
          </manifest>
     </jar>         
+    
     <!-- Copy additional files to ${dist.home} as necessary -->
+    <copy  todir="${dist.home}/lib">
+      <fileset dir="${lib.home}" />
+    </copy>
   </target>
 
   <target name="prepare">
-
     <!-- Create build directories as needed -->
     <mkdir  dir="${build.home}"/>
-    <mkdir  dir="${build.home}/classes"/>
+    <mkdir  dir="${class.home}"/>
 
     <!-- Copy external dependencies as required -->
     <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
     <mkdir  dir="${build.home}/lib"/>
-<!--
-    <copy todir="${build.home}/WEB-INF/lib" file="${foo.jar}"/>
--->
-
-    <!-- Copy static files from external dependencies as needed -->
-    <!-- *** CUSTOMIZE HERE AS REQUIRED BY YOUR APPLICATION *** -->
-
   </target>
-
 
 </project>
