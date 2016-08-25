@@ -31,7 +31,7 @@ import org.json.JSONObject;
 public class GizwitsNoti 
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final String GIZWITS_NOTI_HOST = "127.0.0.1";//"noti.gizwits.com"; // 机智云noti服务地址
+    private static final String GIZWITS_NOTI_HOST = "noti.gizwits.com"; // 机智云noti服务地址
     private static final int GIZWITS_NOTI_PORT = 2015;                  // 机智云noti ssl服务端口
     private String enterpriseId = "";                                   // 登录noti的企业id
     private String enterpriseSecret = "";                               // 登录noti的企业密钥
@@ -53,9 +53,10 @@ public class GizwitsNoti
         this.callBack = callBack;
     }
     
-	public interface CallBack{          // 接受设备消息的回调方法
-		public abstract void call(JSONObject msg);
-	}
+    public interface CallBack           // 接受设备消息的回调方法
+    {          
+    	public abstract void call(JSONObject msg);
+    }
     
     private Socket createSslSocket() throws IOException, NoSuchAlgorithmException, KeyManagementException
     {
@@ -72,16 +73,17 @@ public class GizwitsNoti
         return socket;
     }
     
-    private class MyX509TrustManager implements X509TrustManager {
-    	public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-    	}
+    private class MyX509TrustManager implements X509TrustManager 
+    {
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+        }
 
-    	public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
-    	}
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+        }
 
-    	public X509Certificate[] getAcceptedIssuers() {
-    		return null;
-    	}
+        public X509Certificate[] getAcceptedIssuers() {
+        	return null;
+        }
     }
     
     private class SendThread extends Thread
@@ -89,7 +91,8 @@ public class GizwitsNoti
         private boolean isLogin = false;    // 登录状态
             
         @Override
-        public void run() {
+        public void run() 
+        {
             while (isConnect) {
                 try {
                     String sendMsg;
@@ -144,10 +147,11 @@ public class GizwitsNoti
         }
     }
     
-    private class ReceiveThread extends Thread {
-
+    private class ReceiveThread extends Thread 
+    {
         @Override
-        public void run() {
+        public void run() 
+        {
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
                 while (isConnect) {
@@ -157,29 +161,29 @@ public class GizwitsNoti
                         try {
                             JSONObject json = new JSONObject(line);
                             String cmd = json.getString("cmd");
-                			switch (cmd) 
+                            switch (cmd) 
                             {
-                    			case "enterprise_login_res":    // 登录请求的返回
-                    				checkLogin(json);
-                    				break;
-                    			case "enterprise_pong":         // ping指令的返回
+                            	case "enterprise_login_res":    // 登录请求的返回
+                            		checkLogin(json);
+                            		break;
+                            	case "enterprise_pong":         // ping指令的返回
                                     setPong();
-                    				break;
-                    			case "enterprise_event_push":   // 设备消息
+                            		break;
+                            	case "enterprise_event_push":   // 设备消息
                                     replyAck(json);
                                     callBack.call(json);
-                    				break;
-                			}
+                            		break;
+                            }
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
                 }
                 reader.close();
-            } catch (SocketTimeoutException e){
+            } catch (SocketTimeoutException e) {
                 e.printStackTrace();
                 reconnect();                                    // 接受消息超时重连
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
                 disconnect();
             }
@@ -210,10 +214,9 @@ public class GizwitsNoti
             socket.setSoTimeout(0);             // 设置接受消息超时时间为永久
         }
 
-        private void replyAck(JSONObject json) // 回复noti服务端ack
+        private void replyAck(JSONObject json)  // 回复noti服务端ack
         {
-            try 
-            {
+            try {
                 String sendMsg = "{\"cmd\": \"enterprise_event_ack\",\"delivery_id\": " + json.getLong("delivery_id") + "}\n";
                 logger.debug("发送ack:" + sendMsg);
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -225,17 +228,18 @@ public class GizwitsNoti
         }
     }
     
-    private class ReconnectThread extends Thread {
-
+    private class ReconnectThread extends Thread 
+    {
         @Override
-        public void run() {
+        public void run() 
+        {
             try {
                 Thread.sleep(5000);
                 logger.debug("开始执行重连...");
                 disconnect();
                 sendThread.join(3000);          // 等待发送线程结束
                 receiveThread.join(3000);       // 等待接受线程结束
-                if (reconnCount < MAXCONNECT){
+                if (reconnCount < MAXCONNECT) {
                     reconnCount++ ;
                     connect();                  // 重新开始连接
                 } 
@@ -284,7 +288,7 @@ public class GizwitsNoti
         System.out.println( "Hello World!" );
         
         new GizwitsNoti("8fb23e6dbf06438b8200cf4588e45b5f", "c7c9e01549004b96a8612a0e7c71a9d6", 
-                        new CallBack(){
+                        new CallBack() {
                             @Override
                             public void call(JSONObject msg)    
                             {
