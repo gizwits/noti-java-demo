@@ -4,7 +4,6 @@
   <property name="app.version"   value="0.1.0"/>
   <property name="app.path"      value="/${app.name}"/>
   <property name="build.home"    value="${basedir}/build"/>
-  <property name="dist.home"     value="${basedir}/dist"/>
   <property name="lib.home"      value="${basedir}/lib"/>
   <property name="src.home"      value="${basedir}/src"/>
   <property name="class.home"    value="${build.home}/classes"/>
@@ -27,7 +26,6 @@
   <target name="clean"
    description="Delete old build and dist directories">
     <delete dir="${build.home}"/>
-    <delete dir="${dist.home}"/>
   </target>
   
   <target name="prepare">
@@ -76,18 +74,13 @@ includeAntRuntime="false">
       </pathconvert>
       
     <!-- Create application JAR file -->
-    <jar jarfile="${dist.home}/${app.name}-${app.version}.jar"
+    <jar jarfile="${build.home}/${app.name}-${app.version}.jar"
          basedir="${class.home}" excludes="test">
          <manifest>
              <attribute name="Main-Class" value="com.gizwits.platform.notidemo.GizwitsNoti"/>
              <attribute name="Class-Path" value="${libs}"/>
          </manifest>
     </jar>         
-    
-    <!-- Copy additional files to ${dist.home} as necessary -->
-    <copy  todir="${dist.home}/lib">
-      <fileset dir="${lib.home}" />
-    </copy>
   </target>
 
 </project>
