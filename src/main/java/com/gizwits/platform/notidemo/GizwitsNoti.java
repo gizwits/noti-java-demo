@@ -31,20 +31,20 @@ import org.json.JSONObject;
 public class GizwitsNoti 
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final String GIZWITS_NOTI_HOST = "noti.gizwits.com"; // 机智云noti服务地址
+    private static final String GIZWITS_NOTI_HOST = "m2mv4.iotsdk.com";//"noti.gizwits.com"; // 机智云noti服务地址
     private static final int GIZWITS_NOTI_PORT = 2015;                  // 机智云noti ssl服务端口
     private String enterpriseId = "";                                   // 登录noti的企业id
     private String enterpriseSecret = "";                               // 登录noti的企业密钥
-    private ReceiveThread receiveThread;                                // 接受socket报文的线程
+    private ReceiveThread receiveThread;                                // 接收socket报文的线程
     private SendThread sendThread;                                      // 向socket发送login，ping的线程
     private Socket socket;                                              // sslsocket对象
     private PrintWriter pw;                                             // socket的OutputStream字符流对象
     private boolean isConnect;                                          // socket连接状态
     private boolean isLogin;                                            // eid登录状态
     private int reconnCount;                                            // 重连次数
-    private CallBack callBack;                                          // 接受处理设备通知的回调
-    private final int MAXCONNECT = 2;                                   // 最大重连数
-    private final int TIMEOUT = 10000;                                  // 等待接受socket消息超时时间
+    private CallBack callBack;                                          // 接收处理设备通知的回调
+    private final int MAXCONNECT = 720;                                 // 最大重连数
+    private final int TIMEOUT = 10000;                                  // 等待接收socket消息超时时间
     
     public GizwitsNoti(String enterpriseId, String enterpriseSecret, CallBack callBack)
     {
@@ -53,7 +53,7 @@ public class GizwitsNoti
         this.callBack = callBack;
     }
     
-    public interface CallBack                                   // 接受设备消息的回调方法
+    public interface CallBack                                   // 接收设备消息的回调方法
     {          
     	public abstract void call(JSONObject msg);
     }
@@ -67,7 +67,7 @@ public class GizwitsNoti
         SSLSocketFactory fcty = context.getSocketFactory();
         SSLSocket socket = (SSLSocket) fcty.createSocket(GIZWITS_NOTI_HOST, GIZWITS_NOTI_PORT);
         socket.setKeepAlive(true);                              // 开启socket的保活
-        socket.setSoTimeout(TIMEOUT);                           // 设置socket的接受消息超时时间
+        socket.setSoTimeout(TIMEOUT);                           // 设置socket的接收消息超时时间
         isConnect = true;
         return socket;
     }
@@ -116,10 +116,12 @@ public class GizwitsNoti
                     }
                 } catch (SocketException e) {
                     e.printStackTrace();
+                    logger.error("exception: {}", e.toString());
                     reconnect();                                // 连接被断开重连
                     return;
                 } catch (Exception e) {
                     e.printStackTrace();
+                    logger.error("exception: {}", e.toString());
                 }
             }
             logger.debug("noti接口SendThread退出...." + Thread.currentThread().getName());
@@ -135,12 +137,12 @@ public class GizwitsNoti
                             .put("cmd", "enterprise_login_req")
                             .put("data", data)
                             .toString();
-            String sendMsg =  msg + "\n";
+            String sendMsg = msg + "\n";
             sendMsg(sendMsg);                                   
             logger.debug("登录发送:" + sendMsg);
         }
         
-        public void sendPingMsg() throws IOException, InterruptedException            
+        public void sendPingMsg() throws IOException
         {
             String sendMsg = "{\"cmd\": \"enterprise_ping\"}\n";
             sendMsg(sendMsg);
@@ -151,7 +153,7 @@ public class GizwitsNoti
         {
             pw.write(sendMsg);                                  // 往socket写入消息
             pw.flush();                                         // 让socket发送已写入的消息
-            socket.setSoTimeout(TIMEOUT);                       // 设置socket的接受消息超时时间 
+            socket.setSoTimeout(TIMEOUT);                       // 设置socket的接收消息超时时间 
         }
     }
     
@@ -184,15 +186,18 @@ public class GizwitsNoti
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
+                            logger.error("exception: {}", e.toString());
                         }
                     }
                 }
                 reader.close();
             } catch (SocketTimeoutException e) {
                 e.printStackTrace();
-                reconnect();                                    // 接受消息超时重连
+                logger.error("exception: {}", e.toString());
+                reconnect();                                    // 接收消息超时重连
             } catch (Exception e) {
                 e.printStackTrace();
+                logger.error("exception: {}", e.toString());
                 disconnect();
             }
             logger.debug("noti接口ReceiveThread退出...." + Thread.currentThread().getName());
@@ -205,21 +210,23 @@ public class GizwitsNoti
                 boolean result = data.getBoolean("result");
                 if(result) {
                     isLogin = true;                             // 登录成功
-                    socket.setSoTimeout(0);                     // 设置接受消息超时时间为永久
+                    socket.setSoTimeout(0);                     // 设置接收消息超时时间为永久
                     reconnCount = 0;                            // 重置重连次数
                     logger.info("login success.");
                 } else {
                     logger.info("login fail, msg: {}", data.getString("msg"));
-                    disconnect();                               // 断开连接
+                    disconnect();                               // 登录失败断开连接
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                logger.error("exception: {}", e.toString());
+                disconnect();                                   // 异常断开连接
             }
         }
 
         private void setPong() throws SocketException
         {
-            socket.setSoTimeout(0);                             // 设置接受消息超时时间为永久
+            socket.setSoTimeout(0);                             // 设置接收消息超时时间为永久
         }
 
         private void replyAck(JSONObject json)                  // 回复noti服务端ack
@@ -231,6 +238,7 @@ public class GizwitsNoti
                 pw.flush();
             } catch (Exception e) {
                 e.printStackTrace();
+                logger.error("exception: {}", e.toString());
             }
         }
     }
@@ -244,14 +252,19 @@ public class GizwitsNoti
                 Thread.sleep(5000);
                 logger.debug("开始执行重连...");
                 disconnect();
-                sendThread.join(3000);                          // 等待发送线程结束
-                receiveThread.join(3000);                       // 等待接受线程结束
+                if (sendThread != null) {
+                    sendThread.join(3000);                      // 等待发送线程结束
+                }
+                if (sendThread != null) {
+                    receiveThread.join(3000);                   // 等待接收线程结束
+                }    
                 if (reconnCount < MAXCONNECT) {
                     reconnCount++ ;
                     connect();                                  // 重新开始连接
                 } 
             } catch (Exception e) {
                 e.printStackTrace();
+                logger.error("exception: {}", e.toString());
             }
         }
     }
@@ -270,6 +283,8 @@ public class GizwitsNoti
             receiveThread.start();
         } catch (Exception e) {
             e.printStackTrace();
+            logger.error("exception: {}", e.toString());
+            reconnect();
         }
     }
     
@@ -277,10 +292,13 @@ public class GizwitsNoti
     {
         try {
             logger.debug("终止连接noti....");
-            isConnect = false;
-            socket.close();
+            if (isConnect) {
+                isConnect = false;
+                socket.close();
+            }
         } catch (Exception e) {
             e.printStackTrace();
+            logger.error("exception: {}", e.toString());
         }
     }
     
@@ -294,7 +312,9 @@ public class GizwitsNoti
     {
         System.out.println( "Hello World!" );
         
-        new GizwitsNoti("8fb23e6dbf06438b8200cf4588e45b5f", "c7c9e01549004b96a8612a0e7c71a9d6", 
+        String enterpriseId = "8fb23e6dbf06438b8200cf4588e45b5f";
+        String enterpriseSecret = "c7c9e01549004b96a8612a0e7c71a9d6";
+        new GizwitsNoti(enterpriseId, enterpriseSecret, 
                         new CallBack() {
                             public void call(JSONObject msg)    
                             {
