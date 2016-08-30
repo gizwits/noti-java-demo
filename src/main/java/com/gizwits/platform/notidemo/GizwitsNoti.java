@@ -38,6 +38,7 @@ public class GizwitsNoti
     private ReceiveThread receiveThread;                                // 接受socket报文的线程
     private SendThread sendThread;                                      // 向socket发送login，ping的线程
     private Socket socket;                                              // sslsocket对象
+    private PrintWriter pw;                                             // socket的OutputStream字符流对象
     private boolean isConnect;                                          // socket连接状态
     private boolean isLogin;                                            // eid登录状态
     private int reconnCount;                                            // 重连次数
@@ -148,7 +149,6 @@ public class GizwitsNoti
         
         public void sendMsg(String sendMsg) throws IOException 
         {
-            PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
             pw.write(sendMsg);                                  // 往socket写入消息
             pw.flush();                                         // 让socket发送已写入的消息
             socket.setSoTimeout(TIMEOUT);                       // 设置socket的接受消息超时时间 
@@ -227,7 +227,6 @@ public class GizwitsNoti
             try {
                 String sendMsg = "{\"cmd\": \"enterprise_event_ack\",\"delivery_id\": " + json.getLong("delivery_id") + "}\n";
                 logger.debug("发送ack:" + sendMsg);
-                PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
                 pw.write(sendMsg);
                 pw.flush();
             } catch (Exception e) {
@@ -264,6 +263,7 @@ public class GizwitsNoti
             isConnect = false;
             isLogin = false;
             socket = createSslSocket();
+            pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
             sendThread = new SendThread();
             sendThread.start();
             receiveThread = new ReceiveThread();
