@@ -31,7 +31,7 @@ import org.json.JSONObject;
 public class GizwitsNoti 
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final String GIZWITS_NOTI_HOST = "m2mv4.iotsdk.com";//"noti.gizwits.com"; // 机智云noti服务地址
+    private static final String GIZWITS_NOTI_HOST = "noti.gizwits.com"; // 机智云noti服务地址
     private static final int GIZWITS_NOTI_PORT = 2015;                  // 机智云noti ssl服务端口
     private String enterpriseId = "";                                   // 登录noti的企业id
     private String enterpriseSecret = "";                               // 登录noti的企业密钥
