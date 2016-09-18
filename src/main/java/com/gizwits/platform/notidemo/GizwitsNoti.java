@@ -13,8 +13,6 @@ import java.security.cert.CertificateException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Map;
-import java.util.HashMap;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -26,30 +24,29 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 
 public class GizwitsNoti 
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final String GIZWITS_NOTI_HOST = "noti.gizwits.com"; // 机智云noti服务地址
-    private static final int GIZWITS_NOTI_PORT = 2015;                  // 机智云noti ssl服务端口
-    private String enterpriseId = "";                                   // 登录noti的企业id
-    private String enterpriseSecret = "";                               // 登录noti的企业密钥
-    private ReceiveThread receiveThread;                                // 接收socket报文的线程
-    private SendThread sendThread;                                      // 向socket发送login，ping的线程
-    private Socket socket;                                              // sslsocket对象
-    private PrintWriter pw;                                             // socket的OutputStream字符流对象
-    private boolean isConnect;                                          // socket连接状态
-    private boolean isLogin;                                            // eid登录状态
-    private int reconnCount;                                            // 重连次数
-    private CallBack callBack;                                          // 接收处理设备通知的回调
-    private final int MAXCONNECT = 720;                                 // 最大重连数
-    private final int TIMEOUT = 10000;                                  // 等待接收socket消息超时时间
+    private static final String GIZWITS_NOTI_HOST = "noti2.gizwits.com";    // 机智云noti2服务地址
+    private static final int GIZWITS_NOTI_PORT = 2016;                      // 机智云noti2 ssl服务端口
+    private JSONArray products;                                             // 登录noti2的product信息
+    private ReceiveThread receiveThread;                                    // 接收socket报文的线程
+    private SendThread sendThread;                                          // 向socket发送login，ping的线程
+    private Socket socket;                                                  // sslsocket对象
+    private PrintWriter pw;                                                 // socket的OutputStream字符流对象
+    private boolean isConnect;                                              // socket连接状态
+    private boolean isLogin;                                                // 登录状态
+    private int reconnCount;                                                // 重连次数
+    private CallBack callBack;                                              // 接收处理设备通知的回调
+    private final int MAXCONNECT = 720;                                     // 最大重连数
+    private final int TIMEOUT = 10000;                                      // 等待接收socket消息超时时间
     
-    public GizwitsNoti(String enterpriseId, String enterpriseSecret, CallBack callBack)
+    public GizwitsNoti(JSONArray products, CallBack callBack)
     {
-        this.enterpriseId = enterpriseId;
-        this.enterpriseSecret = enterpriseSecret;
+        this.products = products;
         this.callBack = callBack;
     }
     
@@ -129,13 +126,10 @@ public class GizwitsNoti
         
         public void sendLoginMsg() throws IOException           
         {
-            Map<String, Object> data = new HashMap<String, Object>();
-            data.put("enterprise_id", enterpriseId);
-            data.put("enterprise_secret", enterpriseSecret);
-            data.put("prefetch_count", 50);
             String msg = new JSONObject()
-                            .put("cmd", "enterprise_login_req")
-                            .put("data", data)
+                            .put("cmd", "login_req")
+                            .put("prefetch_count", 50)
+                            .put("data", products)
                             .toString();
             String sendMsg = msg + "\n";
             sendMsg(sendMsg);                                   
@@ -144,7 +138,7 @@ public class GizwitsNoti
         
         public void sendPingMsg() throws IOException
         {
-            String sendMsg = "{\"cmd\": \"enterprise_ping\"}\n";
+            String sendMsg = "{\"cmd\": \"ping\"}\n";
             sendMsg(sendMsg);
             logger.debug("发送心跳:" + sendMsg);
         }
@@ -173,16 +167,25 @@ public class GizwitsNoti
                             String cmd = json.getString("cmd");
                             switch (cmd) 
                             {
-                            	case "enterprise_login_res":    // 登录请求的返回
+                            	case "login_res":               // 登录请求的返回
                                     checkLogin(json);
                                     break;
-                            	case "enterprise_pong":         // ping指令的返回
+                            	case "pong":                    // ping指令的返回
                                     setPong();
                                     break;
-                            	case "enterprise_event_push":   // 设备消息
+                            	case "event_push":              // 设备消息
                                     replyAck(json);
                                     callBack.call(json);
                                     break;
+                                case "invalid_msg":
+                                    callBack.call(json);
+                                    int errorCode = json.getInt("error_code");
+                                    if(4000 == errorCode) {     // noti2服务端内部错误
+                                        reconnect();
+                                    } else {                    // noti2客户端错误
+                                        disconnect();
+                                    }
+                                    break;    
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -232,7 +235,7 @@ public class GizwitsNoti
         private void replyAck(JSONObject json)                  // 回复noti服务端ack
         {
             try {
-                String sendMsg = "{\"cmd\": \"enterprise_event_ack\",\"delivery_id\": " + json.getLong("delivery_id") + "}\n";
+                String sendMsg = "{\"cmd\": \"event_ack\",\"delivery_id\": " + json.getLong("delivery_id") + "}\n";
                 logger.debug("发送ack:" + sendMsg);
                 pw.write(sendMsg);
                 pw.flush();
@@ -288,7 +291,7 @@ public class GizwitsNoti
         }
     }
     
-    private void disconnect()                                   // 断开socket连接
+    public void disconnect()                                    // 断开socket连接
     {
         try {
             logger.debug("终止连接noti....");
@@ -312,9 +315,19 @@ public class GizwitsNoti
     {
         System.out.println( "Hello World!" );
         
-        String enterpriseId = "8fb23e6dbf06438b8200cf4588e45b5f";
-        String enterpriseSecret = "c7c9e01549004b96a8612a0e7c71a9d6";
-        new GizwitsNoti(enterpriseId, enterpriseSecret, 
+        String productKey = "2b336927de044008a237620053d0c88b";
+        String productSecret = "7e99e1096a034139ba3ba5556205516a";
+        String subkey = "demo";
+        String[] events = {"device.attr_fault", "device.attr_alert", "device.online", "device.offline", "device.status.raw", "device.status.kv", "datapoints.changed"};
+        
+        JSONObject product = new JSONObject()
+                                .put("product_key", productKey)
+                                .put("product_secret", productSecret)
+                                .put("subkey", subkey)
+                                .put("events", events);
+        JSONArray products = new JSONArray().put(product);                                
+        
+        new GizwitsNoti(products, 
                         new CallBack() {
                             public void call(JSONObject msg)    
                             {

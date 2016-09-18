@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <project name="GiztiwsNotiDemo" default="compile" basedir=".">
     <property name="app.name" value="gizwits-noti-demo"/>
-    <property name="app.version" value="0.1.0"/>
+    <property name="app.version" value="0.2.0"/>
     <property name="app.path" value="/${app.name}"/>
     <property name="build.home" value="${basedir}/build"/>
     <property name="lib.home" value="${basedir}/lib"/>
