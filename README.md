@@ -22,7 +22,7 @@ Gizwits noti client demo.
     * `mvn clean package`
 * 运行demo，打印接受到的设备消息
     * `java -jar target/gizwits-noti-demo-0.2.0-jar-with-dependencies.jar`
-* 与enterpriseId关联的productKey下的设备，上下线，即可查看设备消息。在当前logs文件夹下可查看日志
+* 与authId关联的设备，上下线，即可查看设备消息。在当前logs文件夹下可查看日志
 
 ## ant编译 & 运行
 * 打包代码和库，在build文件夹下生成`gizwits-noti-demo-0.2.0.jar`
