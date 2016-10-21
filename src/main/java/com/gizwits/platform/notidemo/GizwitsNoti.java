@@ -32,8 +32,10 @@ import org.json.JSONArray;
 public class GizwitsNoti 
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final String GIZWITS_NOTI_HOST = "m2mv4.iotsdk.com";//"noti2.gizwits.com";    // 机智云noti2服务地址
-    private static final int GIZWITS_NOTI_PORT = 2017;                      // 机智云noti2 ssl服务端口
+    // 机智云noti2 ssl服务地址
+    private static final String GIZWITS_NOTI_HOST = Setting.getValue("gizwits.noti.host");
+    // 机智云noti2 ssl服务端口
+    private static final int GIZWITS_NOTI_PORT = Integer.parseInt(Setting.getValue("gizwits.noti.port"));
     private JSONArray products;                                             // 登录noti2的product信息
     private ReceiveThread receiveThread;                                    // 接收socket报文的线程
     private SendThread sendThread;                                          // 向socket发送login，ping的线程
@@ -319,9 +321,9 @@ public class GizwitsNoti
     public static void main( String[] args )
     {
         System.out.println( "Hello World!" );
-        String productKey = "2b336927de044008a237620053d0c88b";
-        String authId = "qgT/Iqx9RXCJya6K1eH/yg";
-        String authSecret = "TUoZu8+aQ9ascDiOlnIHVA";
+        String productKey = Setting.getValue("gizwits.productKey");
+        String authId = Setting.getValue("gizwits.productKey.authId");
+        String authSecret = Setting.getValue("gizwits.productKey.authSecret");
         String subkey = "demo";
         String[] events = {"device.attr_fault", "device.attr_alert", "device.online", "device.offline", "device.status.raw", "device.status.kv", "datapoints.changed"};
         
@@ -340,14 +342,5 @@ public class GizwitsNoti
                                 System.out.println( msg.toString() );
                             }
                         }).connect();
-        while(true){
-            System.out.println("请输入您想输入的字符串：");
-            Scanner s = new Scanner(System.in);                
-            String str = s.next();
-            if(str.equals("stop")){
-                break;
-            }
-            System.out.println("您输入的是：" + str);    
-        }
     }
 }
