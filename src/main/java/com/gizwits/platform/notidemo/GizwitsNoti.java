@@ -14,6 +14,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import java.util.Scanner;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
@@ -30,8 +32,8 @@ import org.json.JSONArray;
 public class GizwitsNoti 
 {
     private static final Logger logger = LogManager.getLogger();
-    private static final String GIZWITS_NOTI_HOST = "noti2.gizwits.com";    // 机智云noti2服务地址
-    private static final int GIZWITS_NOTI_PORT = 2016;                      // 机智云noti2 ssl服务端口
+    private static final String GIZWITS_NOTI_HOST = "m2mv4.iotsdk.com";//"noti2.gizwits.com";    // 机智云noti2服务地址
+    private static final int GIZWITS_NOTI_PORT = 2017;                      // 机智云noti2 ssl服务端口
     private JSONArray products;                                             // 登录noti2的product信息
     private ReceiveThread receiveThread;                                    // 接收socket报文的线程
     private SendThread sendThread;                                          // 向socket发送login，ping的线程
@@ -177,6 +179,9 @@ public class GizwitsNoti
                                     replyAck(json);
                                     callBack.call(json);
                                     break;
+                                case "remote_control_res":      // 控制指令的返回
+                                    callBack.call(json);
+                                    break;    
                                 case "invalid_msg":
                                     callBack.call(json);
                                     int errorCode = json.getInt("error_code");
@@ -185,7 +190,7 @@ public class GizwitsNoti
                                     } else {                    // noti2客户端错误
                                         disconnect();
                                     }
-                                    break;    
+                                    break;
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -314,18 +319,19 @@ public class GizwitsNoti
     public static void main( String[] args )
     {
         System.out.println( "Hello World!" );
-        
         String productKey = "2b336927de044008a237620053d0c88b";
-        String productSecret = "7e99e1096a034139ba3ba5556205516a";
+        String authId = "qgT/Iqx9RXCJya6K1eH/yg";
+        String authSecret = "TUoZu8+aQ9ascDiOlnIHVA";
         String subkey = "demo";
         String[] events = {"device.attr_fault", "device.attr_alert", "device.online", "device.offline", "device.status.raw", "device.status.kv", "datapoints.changed"};
         
         JSONObject product = new JSONObject()
                                 .put("product_key", productKey)
-                                .put("product_secret", productSecret)
+                                .put("auth_id", authId)
+                                .put("auth_secret", authSecret)    
                                 .put("subkey", subkey)
                                 .put("events", events);
-        JSONArray products = new JSONArray().put(product);                                
+        JSONArray products = new JSONArray().put(product);
         
         new GizwitsNoti(products, 
                         new CallBack() {
@@ -334,5 +340,14 @@ public class GizwitsNoti
                                 System.out.println( msg.toString() );
                             }
                         }).connect();
+        while(true){
+            System.out.println("请输入您想输入的字符串：");
+            Scanner s = new Scanner(System.in);                
+            String str = s.next();
+            if(str.equals("stop")){
+                break;
+            }
+            System.out.println("您输入的是：" + str);    
+        }
     }
 }
