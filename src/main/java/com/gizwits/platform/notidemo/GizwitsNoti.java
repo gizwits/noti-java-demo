@@ -33,7 +33,7 @@ public class GizwitsNoti
 {
     private static final Logger logger = LogManager.getLogger();
     // 机智云noti2 ssl服务地址
-    private static final String GIZWITS_NOTI_HOST = Setting.getValue("gizwits.noti.host");
+    private static final String GIZWITS_NOTI_HOST = Setting.getValue("gizwits.noti.host").trim();
     // 机智云noti2 ssl服务端口
     private static final int GIZWITS_NOTI_PORT = Integer.parseInt(Setting.getValue("gizwits.noti.port"));
     private JSONArray products;                                             // 登录noti2的product信息
@@ -321,9 +321,9 @@ public class GizwitsNoti
     public static void main( String[] args )
     {
         System.out.println( "Hello World!" );
-        String productKey = Setting.getValue("gizwits.productKey");
-        String authId = Setting.getValue("gizwits.productKey.authId");
-        String authSecret = Setting.getValue("gizwits.productKey.authSecret");
+        String productKey = Setting.getValue("gizwits.productKey").trim();
+        String authId = Setting.getValue("gizwits.productKey.authId").trim();
+        String authSecret = Setting.getValue("gizwits.productKey.authSecret").trim();
         String subkey = "demo";
         String[] events = {"device.attr_fault", "device.attr_alert", "device.online", "device.offline", "device.status.raw", "device.status.kv", "datapoints.changed"};
         
