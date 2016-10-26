@@ -1,11 +1,11 @@
 gizwits_noti_demo
 ==================
-v0.2.0
+v2.0.0
 
 Gizwits noti client demo.
 需要jdk7及以上版本
 
-## Change log: v0.2.0 (2016/09)
+## Change log: v2.0.0 (2016/09)
 * Update for noti2
 * Update for login with auth_id
 

@@ -175,13 +175,14 @@ public class GizwitsNoti
                                     checkLogin(json);
                                     break;
                             	case "pong":                    // ping指令的返回
-                                    setPong();
+                                    setTimeout();
                                     break;
                             	case "event_push":              // 设备消息
                                     replyAck(json);
                                     callBack.call(json);
                                     break;
                                 case "remote_control_res":      // 控制指令的返回
+                                    setTimeout();
                                     callBack.call(json);
                                     break;    
                                 case "invalid_msg":
@@ -234,7 +235,7 @@ public class GizwitsNoti
             }
         }
 
-        private void setPong() throws SocketException
+        private void setTimeout() throws SocketException
         {
             socket.setSoTimeout(0);                             // 设置接收消息超时时间为永久
         }
@@ -318,6 +319,53 @@ public class GizwitsNoti
         new ReconnectThread().start();
     }
     
+    public void remoteControl()                                 // 发送远程控制指令
+    {
+        System.out.println("准备远程控制...");
+        try {
+            if(isLogin) {
+                String productKey = Setting.getValue("gizwits.productKey").trim();
+                String did = Setting.getValue("gizwits.rc.did").trim();
+                String mac = Setting.getValue("gizwits.rc.mac").trim();
+                String cmd = Setting.getValue("gizwits.rc.cmd").trim();
+                String type = null;
+                Object value = null;
+                if(cmd.equals("write")) {
+                    type = "raw";
+                    String valueStr = Setting.getValue("gizwits.rc." + type).trim();
+                    value = new JSONArray(valueStr);
+                } 
+                else if(cmd.equals("write_attrs")){
+                    type = "attrs";
+                    String valueStr = Setting.getValue("gizwits.rc." + type).trim();
+                    value = new JSONObject(valueStr);
+                }
+                JSONObject dataData = new JSONObject()
+                                        .put("did", did)
+                                        .put("mac", mac)
+                                        .put("product_key", productKey)
+                                        .put(type, value);
+                JSONObject data = new JSONObject()
+                                        .put("cmd", cmd)
+                                        .put("source", "noti")
+                                        .put("data", dataData);
+                JSONArray datas = new JSONArray().put(data);
+                JSONObject rc = new JSONObject()
+                                        .put("cmd", "remote_control_req")
+                                        .put("data", datas);
+                System.out.println("发送rc:" + rc.toString());
+                pw.write(rc.toString()+ "\n");
+                pw.flush();
+            } 
+            else {
+                System.out.println("连接不成功，无法发送控制");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("rc exception: {}", e.toString());
+        }
+    }
+    
     public static void main( String[] args )
     {
         System.out.println( "Hello World!" );
@@ -335,12 +383,28 @@ public class GizwitsNoti
                                 .put("events", events);
         JSONArray products = new JSONArray().put(product);
         
-        new GizwitsNoti(products, 
+        GizwitsNoti gizwitsNoti = new GizwitsNoti(products,
                         new CallBack() {
-                            public void call(JSONObject msg)    
+                            public void call(JSONObject msg)
                             {
                                 System.out.println( msg.toString() );
                             }
-                        }).connect();
+                        });
+        gizwitsNoti.connect();
+
+        while(true) {
+            System.out.println("若需控制设备，请输入控制指令：rc。若不需要，请输入停止指令：stop");
+            Scanner s = new Scanner(System.in);
+            String str = s.next();
+            System.out.println("您输入的是：" + str);
+            if(str.equals("stop")){
+                System.out.println("输入控制已停止");
+                break;
+            }
+            else if (str.equals("rc")) {
+                System.out.println("请先等待控制结果返回后，再继续发起控制指令。");
+                gizwitsNoti.remoteControl();
+            }
+        }
     }
 }
