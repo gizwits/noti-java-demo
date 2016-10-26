@@ -325,19 +325,19 @@ public class GizwitsNoti
         try {
             if(isLogin) {
                 String productKey = Setting.getValue("gizwits.productKey").trim();
-                String did = Setting.getValue("gizwits.rc.did").trim();
-                String mac = Setting.getValue("gizwits.rc.mac").trim();
-                String cmd = Setting.getValue("gizwits.rc.cmd").trim();
+                String did = Setting.getValue("gizwits.remoteControl.did").trim();
+                String mac = Setting.getValue("gizwits.remoteControl.mac").trim();
+                String cmd = Setting.getValue("gizwits.remoteControl.cmd").trim();
                 String type = null;
                 Object value = null;
                 if(cmd.equals("write")) {
                     type = "raw";
-                    String valueStr = Setting.getValue("gizwits.rc." + type).trim();
+                    String valueStr = Setting.getValue("gizwits.remoteControl." + type).trim();
                     value = new JSONArray(valueStr);
                 } 
                 else if(cmd.equals("write_attrs")){
                     type = "attrs";
-                    String valueStr = Setting.getValue("gizwits.rc." + type).trim();
+                    String valueStr = Setting.getValue("gizwits.remoteControl." + type).trim();
                     value = new JSONObject(valueStr);
                 }
                 JSONObject dataData = new JSONObject()
