@@ -4,3 +4,5 @@ dist
 target
 *.swp
 logs
+.idea
+*.iml
