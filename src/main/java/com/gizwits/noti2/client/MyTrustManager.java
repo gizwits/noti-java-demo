@@ -1,4 +1,4 @@
-package com.gizwits.noti2.sslservice.client;
+package com.gizwits.noti2.client;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
@@ -28,3 +28,4 @@ public class MyTrustManager {
         return tm;
     }
 }
+

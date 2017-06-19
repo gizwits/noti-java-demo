@@ -1,4 +1,4 @@
-package com.gizwits.noti2.sslservice.msg;
+package com.gizwits.noti2.msg;
 
 import java.util.List;
 
@@ -33,3 +33,4 @@ public class BaseMsg<T> {
         this.data = data;
     }
 }
+

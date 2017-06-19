@@ -1,6 +1,6 @@
-package com.gizwits.noti2.sslservice.client;
+package com.gizwits.noti2.client;
 
-import com.gizwits.noti2.sslservice.handler.ClientHandler;
+import com.gizwits.noti2.handler.ClientHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -19,6 +19,12 @@ import javax.net.ssl.TrustManager;
  */
 public class ClientInitializer extends ChannelInitializer<SocketChannel> {
 
+    private NettyClient nettyClient;
+
+    public ClientInitializer(NettyClient nettyClient) {
+        this.nettyClient = nettyClient;
+    }
+
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
@@ -30,13 +36,13 @@ public class ClientInitializer extends ChannelInitializer<SocketChannel> {
         pipeline.addLast(new SslHandler(sslEngine));
 
         // On top of the SSL handler, add the text line codec.
-       // pipeline.addLast(new IdleStateHandler(300,300));
+        // pipeline.addLast(new IdleStateHandler(300,300));
         pipeline.addLast(new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
         pipeline.addLast(new StringDecoder());
         pipeline.addLast(new StringEncoder());
 
         // and then business logic.
-        pipeline.addLast(new ClientHandler());
+        pipeline.addLast(new ClientHandler(this.nettyClient));
     }
 
 }

@@ -1,4 +1,4 @@
-package com.gizwits.noti2.sslservice.msg;
+package com.gizwits.noti2.msg;
 
 import java.util.List;
 
@@ -12,9 +12,6 @@ public class LoginVO2 {
     private String auth_secret;
     private String subkey;
     private List<String> events;
-
-    public LoginVO2() {
-    }
 
     public LoginVO2(String product_key, String auth_id, String auth_secret, String subkey, List<String> events) {
         this.product_key = product_key;
@@ -64,3 +61,4 @@ public class LoginVO2 {
         this.events = events;
     }
 }
+

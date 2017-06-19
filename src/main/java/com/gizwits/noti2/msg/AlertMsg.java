@@ -1,4 +1,4 @@
-package com.gizwits.noti2.sslservice.msg;
+package com.gizwits.noti2.msg;
 
 /**
  * Created by l8611 on 2015/8/24.
@@ -13,3 +13,4 @@ public class AlertMsg extends BaseMsg {
     private String group_id;
     private long created_at;
 }
+

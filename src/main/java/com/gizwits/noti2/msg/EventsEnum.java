@@ -1,4 +1,4 @@
-package com.gizwits.noti2.sslservice.msg;
+package com.gizwits.noti2.msg;
 
 /**
  * Created by daitl on 2016/11/24.
