@@ -2,11 +2,8 @@ package com.gizwits;
 
 import com.gizwits.noti2.client.NettyClient;
 
-import javax.annotation.Resource;
-
 public class Main {
 
-    @Resource
     private static NettyClient nettyClient;
 
     public static void main(String[] args) {
