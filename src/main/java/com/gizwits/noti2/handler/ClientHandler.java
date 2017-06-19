@@ -61,6 +61,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
                 break;
             case "event_push":
                 handleEventPush(object, ctx);
+                break;
             case "invalid_msg":
                 handleInvalidMsg(object);
                 break;
