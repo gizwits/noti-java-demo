@@ -85,12 +85,19 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
         JSONObject data = object.getJSONObject("data");
         boolean result = data.getBooleanValue("result");
         if (result) {
-            this.scheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(new HeartBeat(this.nettyClient, ctx), 20, 20, TimeUnit.SECONDS);
+            this.scheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(new HeartBeat(this.nettyClient, ctx), 60, 60, TimeUnit.SECONDS);
             nettyClient.setLastHeartBeatTime(System.currentTimeMillis());
         }
         else {
             String errMsg = data.getString("msg");
             logger.error("==> login error: " + errMsg);
+            // 等待一段时间后，尝试重连
+            try {
+                TimeUnit.SECONDS.sleep(30);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            nettyClient.login();
         }
     }
 
@@ -101,8 +108,11 @@ public class ClientHandler extends SimpleChannelInboundHandler<String> {
 
     private void handleRemoteControlRes(JSONObject object)
     {
-        //TODO:
-        return;
+        String msgId = object.getString("msg_id");
+        JSONObject result = object.getJSONObject("result");
+        String succeed = result.getString("succeed");
+        String failed = result.getString("failed");
+        logger.info(String.format("设备控制返回: msgid= %s, 成功列表: %s, 失败列表: %s", msgId, succeed, failed));
     }
 
     private void handleEventPush(JSONObject object, ChannelHandlerContext ctx) {

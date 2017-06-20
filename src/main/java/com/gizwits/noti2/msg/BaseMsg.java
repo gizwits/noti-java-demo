@@ -7,6 +7,7 @@ import java.util.List;
  */
 public class BaseMsg<T> {
     private String cmd;
+    private String msg_id;
     private List<T> data;
 
     public BaseMsg() {
@@ -31,6 +32,14 @@ public class BaseMsg<T> {
 
     public void setData(List<T> data) {
         this.data = data;
+    }
+
+    public String getMsg_id() {
+        return msg_id;
+    }
+
+    public void setMsg_id(String msg_id) {
+        this.msg_id = msg_id;
     }
 }
 

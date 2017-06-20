@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.gizwits.noti2.msg.BaseMsg;
 import com.gizwits.noti2.msg.EventsEnum;
 import com.gizwits.noti2.msg.LoginVO2;
+import com.gizwits.noti2.msg.RemoteControl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -14,6 +15,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class NettyClient {
@@ -59,6 +62,24 @@ public class NettyClient {
         BaseMsg<LoginVO2> loginMsg = new BaseMsg<>("login_req", Arrays.asList(loginVO2));
         String msgStr = JSON.toJSONString(loginMsg)+"\n";
         logger.warn("==>登录"+msgStr);
+        sendMsg(msgStr);
+    }
+
+    public void remoteControl(String did, String mac, String productKey, Map attrs, String msgId) {
+        RemoteControl rc = new RemoteControl("write_attrs", did, mac, productKey, attrs);
+        BaseMsg<RemoteControl> rcMsg = new BaseMsg<>("remote_control_req", Arrays.asList(rc));
+        rcMsg.setMsg_id(msgId);
+        String msgStr = JSON.toJSONString(rcMsg) + "\n";
+        logger.info("==>控制"+msgStr);
+        sendMsg(msgStr);
+    }
+
+    public void remoteControl(String did, String mac, String productKey, List<Integer> raw, String msgId) {
+        RemoteControl rc = new RemoteControl("write", did, mac, productKey, raw);
+        BaseMsg<RemoteControl> rcMsg = new BaseMsg<>("remote_control_req", Arrays.asList(rc));
+        rcMsg.setMsg_id(msgId);
+        String msgStr = JSON.toJSONString(rcMsg) + "\n";
+        logger.info("==>控制"+msgStr);
         sendMsg(msgStr);
     }
 
